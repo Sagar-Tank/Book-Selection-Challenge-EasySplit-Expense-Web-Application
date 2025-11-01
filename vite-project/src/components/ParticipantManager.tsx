@@ -40,9 +40,10 @@ const ParticipantManager: React.FC = () => {
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-        👥 Participants
+    <Paper elevation={2} sx={{ p: 3, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+        <PersonAddIcon color="primary" />
+        Participants
       </Typography>
       <Divider sx={{ mb: 2 }} />
 
@@ -79,21 +80,29 @@ const ParticipantManager: React.FC = () => {
                 sx={{
                   border: '1px solid',
                   borderColor: 'divider',
-                  borderRadius: 1,
+                  borderRadius: 2,
                   mb: 1,
-                  bgcolor: 'background.default'
+                  bgcolor: 'background.paper',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    bgcolor: 'action.hover'
+                  }
                 }}
                 secondaryAction={
                   <IconButton
                     edge="end"
                     onClick={() => handleRemove(participant.id)}
                     color="error"
+                    size="small"
                   >
                     <DeleteIcon />
                   </IconButton>
                 }
               >
-                <ListItemText primary={participant.name} />
+                <ListItemText
+                  primary={participant.name}
+                  slotProps={{ primary: { fontWeight: 500 } }}
+                />
               </ListItem>
             ))
           )}

@@ -9,10 +9,13 @@ import {
   Chip
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ReceiptIcon from '@mui/icons-material/Receipt';
 import { useExpense } from '../hooks/useExpense';
+import { useAuth } from '../context/AuthContext';
 
 const ExpenseList = () => {
   const { expenses, participants, removeExpense } = useExpense();
+  const { currentUser } = useAuth();
 
   const getParticipantName = (id: string) => {
     return participants.find(p => p.id === id)?.name || 'Unknown';
@@ -38,9 +41,10 @@ const ExpenseList = () => {
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-        📋 All Expenses
+    <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+        <ReceiptIcon color="primary" />
+        All Expenses
       </Typography>
       <Divider sx={{ mb: 2 }} />
 
@@ -51,65 +55,99 @@ const ExpenseList = () => {
           </Typography>
         ) : (
           <List>
-            {expenses.map((expense, index) => (
-              <div key={expense.id}>
-                <ListItem
-                  sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 1,
-                    mb: 1,
-                    bgcolor: 'background.default',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start'
-                  }}
-                  secondaryAction={
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleRemove(expense.id)}
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  }
-                >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mb: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                      {expense.description}
-                    </Typography>
-                    <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-                      ₹{expense.totalAmount.toFixed(2)}
-                    </Typography>
-                  </Box>
+            {expenses.map((expense, index) => {
+              // Check if current user created this expense
+              const isCreator = expense.userId === currentUser?.uid;
+              // Check if current user is involved (find user's participant record)
+              const userParticipant = participants.find(p => p.userId === currentUser?.uid);
+              const isParticipant = userParticipant && expense.participantIds?.includes(userParticipant.id);
 
-                  <Box sx={{ mb: 1 }}>
-                    <Chip
-                      label={`Paid by: ${getParticipantName(expense.payeeId)}`}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                    <Chip
-                      label={getSplitTypeLabel(expense.splitType)}
-                      size="small"
-                      sx={{ ml: 1 }}
-                    />
-                  </Box>
-
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Split among {expense.splits.length} participant(s):
-                    </Typography>
-                    {expense.splits.map((split, i) => (
-                      <Typography key={i} variant="body2" sx={{ ml: 2 }}>
-                        • {getParticipantName(split.participantId)}: ₹{split.amount.toFixed(2)}
+              return (
+                <div key={expense.id}>
+                  <ListItem
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      mb: 1,
+                      bgcolor: isCreator ? 'background.paper' : 'action.selected',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'action.hover',
+                        boxShadow: 2
+                      }
+                    }}
+                    secondaryAction={
+                      // Only show delete button if user created the expense
+                      isCreator ? (
+                        <IconButton
+                          edge="end"
+                          onClick={() => handleRemove(expense.id)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      ) : null
+                    }
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mb: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                          {expense.description}
+                        </Typography>
+                        {!isCreator && isParticipant && (
+                          <Chip
+                            label="Involved"
+                            size="small"
+                            color="info"
+                            sx={{ fontSize: '0.7rem', height: 20 }}
+                          />
+                        )}
+                      </Box>
+                      <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+                        ₹{expense.totalAmount.toFixed(2)}
                       </Typography>
-                    ))}
-                  </Box>
-                </ListItem>
-                {index < expenses.length - 1 && <Divider sx={{ my: 1 }} />}
-              </div>
-            ))}
+                    </Box>
+
+                    <Box sx={{ mb: 1 }}>
+                      <Chip
+                        label={`Paid by: ${expense.payeeName || getParticipantName(expense.payeeId)}`}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                      <Chip
+                        label={getSplitTypeLabel(expense.splitType)}
+                        size="small"
+                        sx={{ ml: 1 }}
+                      />
+                      {isCreator && (
+                        <Chip
+                          label="You created"
+                          size="small"
+                          color="success"
+                          sx={{ ml: 1 }}
+                        />
+                      )}
+                    </Box>
+
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Split among {expense.splits.length} participant(s):
+                      </Typography>
+                      {expense.splits.map((split, i) => (
+                        <Typography key={i} variant="body2" sx={{ ml: 2 }}>
+                          • {split.participantName || getParticipantName(split.participantId)}: ₹{split.amount.toFixed(2)}
+                        </Typography>
+                      ))}
+                    </Box>
+                  </ListItem>
+                  {index < expenses.length - 1 && <Divider sx={{ my: 1 }} />}
+                </div>
+              );
+            })}
           </List>
         )}
       </Box>

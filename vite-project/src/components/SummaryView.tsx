@@ -8,6 +8,7 @@ import {
   Chip
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import { useExpense } from '../hooks/useExpense';
 
 const SummaryView = () => {
@@ -20,15 +21,16 @@ const SummaryView = () => {
 
   if (summary.length === 0) {
     return (
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-          💳 Settlement Summary
+      <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AccountBalanceIcon color="primary" />
+          Settlement Summary
         </Typography>
         <Divider sx={{ mb: 2 }} />
-        <Box sx={{ textAlign: 'center', py: 3 }}>
-          <TrendingUpIcon sx={{ fontSize: 48, color: 'success.main', mb: 1 }} />
-          <Typography variant="body1" color="success.main" sx={{ fontWeight: 'bold' }}>
-            All Settled Up!
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <TrendingUpIcon sx={{ fontSize: 64, color: 'success.main', mb: 2, opacity: 0.8 }} />
+          <Typography variant="h6" color="success.main" sx={{ fontWeight: 'bold', mb: 1 }}>
+            All Settled Up! 🎉
           </Typography>
           <Typography variant="body2" color="text.secondary">
             No outstanding balances
@@ -39,9 +41,10 @@ const SummaryView = () => {
   }
 
   return (
-    <Paper elevation={3} sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-        💳 Settlement Summary
+    <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+        <AccountBalanceIcon color="primary" />
+        Settlement Summary
       </Typography>
       <Divider sx={{ mb: 2 }} />
 
@@ -53,19 +56,23 @@ const SummaryView = () => {
                 sx={{
                   border: '1px solid',
                   borderColor: 'error.main',
-                  borderRadius: 1,
+                  borderRadius: 2,
                   mb: 1,
                   bgcolor: 'error.light',
-                  color: 'error.contrastText'
+                  color: 'error.contrastText',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    boxShadow: 2
+                  }
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
                   <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                    {getParticipantName(item.fromId)}
+                    {item.fromName || getParticipantName(item.fromId)}
                   </Typography>
                   <Typography variant="body2">owes</Typography>
                   <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                    {getParticipantName(item.toId)}
+                    {item.toName || getParticipantName(item.toId)}
                   </Typography>
                   <Box sx={{ flexGrow: 1 }} />
                   <Chip

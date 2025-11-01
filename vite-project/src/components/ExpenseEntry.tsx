@@ -15,6 +15,7 @@ import {
   Autocomplete
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import PaymentIcon from '@mui/icons-material/Payment';
 import { useExpense } from '../hooks/useExpense';
 
 const ExpenseEntry: React.FC = () => {
@@ -49,15 +50,26 @@ const ExpenseEntry: React.FC = () => {
       return;
     }
 
-    let splits: Array<{ participantId: string; amount: number }> = [];
+    // Get payee name
+    const payee = participants.find(p => p.id === payeeId);
+    if (!payee) {
+      setError('Payee not found');
+      return;
+    }
+
+    let splits: Array<{ participantId: string; participantName: string; amount: number }> = [];
     let shares: Record<string, number> | undefined = undefined;
 
     if (splitType === 'equal') {
       const perPerson = parseFloat(amount) / selectedParticipants.length;
-      splits = selectedParticipants.map(id => ({
-        participantId: id,
-        amount: perPerson
-      }));
+      splits = selectedParticipants.map(id => {
+        const participant = participants.find(p => p.id === id);
+        return {
+          participantId: id,
+          participantName: participant?.name || 'Unknown',
+          amount: perPerson
+        };
+      });
     } else if (splitType === 'unequal') {
       const totalUnequal = selectedParticipants.reduce((sum, id) =>
         sum + (unequalSplits[id] || 0), 0);
@@ -67,10 +79,14 @@ const ExpenseEntry: React.FC = () => {
         return;
       }
 
-      splits = selectedParticipants.map(id => ({
-        participantId: id,
-        amount: unequalSplits[id] || 0
-      }));
+      splits = selectedParticipants.map(id => {
+        const participant = participants.find(p => p.id === id);
+        return {
+          participantId: id,
+          participantName: participant?.name || 'Unknown',
+          amount: unequalSplits[id] || 0
+        };
+      });
     } else if (splitType === 'proportional') {
       const totalShares = selectedParticipants.reduce((sum, id) =>
         sum + (proportionalShares[id] || 0), 0);
@@ -82,9 +98,11 @@ const ExpenseEntry: React.FC = () => {
 
       shares = { ...proportionalShares };
       splits = selectedParticipants.map(id => {
+        const participant = participants.find(p => p.id === id);
         const share = proportionalShares[id] || 0;
         return {
           participantId: id,
+          participantName: participant?.name || 'Unknown',
           amount: (share / totalShares) * parseFloat(amount)
         };
       });
@@ -95,9 +113,11 @@ const ExpenseEntry: React.FC = () => {
         description,
         totalAmount: parseFloat(amount),
         payeeId,
+        payeeName: payee.name,
         splitType,
         splits,
-        shares
+        shares,
+        createdAt: Date.now()
       });
 
       // Reset form
@@ -114,9 +134,10 @@ const ExpenseEntry: React.FC = () => {
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-        💰 Add Expense
+    <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+        <PaymentIcon color="primary" />
+        Add Expense
       </Typography>
       <Divider sx={{ mb: 2 }} />
 
@@ -177,7 +198,7 @@ const ExpenseEntry: React.FC = () => {
         <Autocomplete
           multiple
           options={participants}
-          getOptionLabel={(option) => option.name}
+          getOptionLabel={(option) => `${option.name}${option.email ? ` (${option.email})` : ''}`}
           value={participants.filter(p => selectedParticipants.includes(p.id))}
           onChange={(_, newValue) => {
             setSelectedParticipants(newValue.map(p => p.id));
@@ -186,7 +207,7 @@ const ExpenseEntry: React.FC = () => {
             setProportionalShares({});
           }}
           renderInput={(params) => (
-            <TextField {...params} label="Select Participants" />
+            <TextField {...params} label="Select Participants (Platform Users)" placeholder="Select registered users..." />
           )}
           renderTags={(value, getTagProps) =>
             value.map((option, index) => (
@@ -197,6 +218,20 @@ const ExpenseEntry: React.FC = () => {
               />
             ))
           }
+          renderOption={(props, option) => (
+            <li {...props} key={option.id}>
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {option.name}
+                </Typography>
+                {option.email && (
+                  <Typography variant="caption" color="text.secondary">
+                    {option.email}
+                  </Typography>
+                )}
+              </Box>
+            </li>
+          )}
         />
 
         {splitType === 'unequal' && selectedParticipants.length > 0 && (
